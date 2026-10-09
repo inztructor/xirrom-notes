@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FlipNote</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#efe9db;--ink:#2b2a28;--paper:#fffdf8;--accent:#b4472f;--bar:#e2d9c4;--mute:#7b756a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1d1c1a;--ink:#eee8da;--paper:#2a2825;--accent:#e0805f;--bar:#33302c;--mute:#a39c8e}}
+:root[data-theme="dark"]{--bg:#1d1c1a;--ink:#eee8da;--paper:#2a2825;--accent:#e0805f;--bar:#33302c;--mute:#a39c8e}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;justify-content:space-between;align-items:baseline;padding:12px 18px 6px}
+h1{font-size:18px;margin:0}
+.hb{display:flex;gap:6px}.hb button{border:0;border-radius:10px;padding:7px 11px;font-size:13px;background:var(--paper);color:var(--ink);cursor:pointer}.hb button:disabled{opacity:.5}
+#tbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:2px 18px 4px;max-width:596px;margin:0 auto;width:100%;min-height:26px}
+#ttl{flex:1;min-width:0;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+#ttl::after{content:' \270E';color:var(--mute);font-weight:400}
+#ttl.none{color:var(--mute);font-weight:400;font-style:italic}
+#count{font-size:13px;color:var(--mute);white-space:nowrap}
+#wrap{flex:1;min-height:0;padding:8px 18px 12px;perspective:1600px;display:flex;justify-content:center;align-items:center;position:relative}
+#book{position:relative;flex:none}
+.page{position:absolute;inset:0;background:var(--paper);border-radius:4px 12px 12px 4px;box-shadow:0 6px 18px rgba(0,0,0,.25),inset 8px 0 10px -8px rgba(0,0,0,.3);overflow:hidden;transform-origin:left center;backface-visibility:hidden}
+.hdr{position:absolute;left:7.26%;right:7.26%;top:0;height:8.44%;display:flex;align-items:flex-end;padding-bottom:calc(var(--u)*26);font-weight:700;font-size:calc(var(--u)*46);border-bottom:calc(var(--u)*3) solid var(--bar);white-space:nowrap;overflow:hidden;font-family:Helvetica,Arial,sans-serif}
+.area{position:absolute;left:7.26%;top:10.26%;width:85.48%;height:82.32%}
+.it{position:absolute;touch-action:none;cursor:move}
+.it.sel{outline:2px solid var(--accent)}
+.it img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.tx{width:100%;height:100%;overflow:hidden;white-space:pre-wrap;word-break:break-word;line-height:1.5;font-family:Georgia,"Times New Roman",serif;pointer-events:none}
+.hd{position:absolute;right:-11px;bottom:-11px;width:26px;height:26px;border-radius:50%;background:var(--accent);border:3px solid #fff;display:none}
+.it.sel .hd{display:block}
+.num{position:absolute;bottom:calc(var(--u)*34);left:0;right:0;text-align:center;font-size:calc(var(--u)*28);color:var(--mute)}
+.empty{height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--mute);line-height:1.5}
+@keyframes out{to{transform:rotateY(-110deg);opacity:.15}}
+@keyframes inn{from{transform:rotateY(-110deg);opacity:.15}to{transform:rotateY(0);opacity:1}}
+.flip-out{animation:out .55s ease-in forwards;z-index:3}
+.flip-in{animation:inn .55s ease-out forwards;z-index:3}
+#sel{position:absolute;top:6px;left:18px;right:18px;z-index:5;display:none;gap:6px;overflow-x:auto;padding:6px;background:var(--bar);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+#sel button{flex:none;border:0;border-radius:9px;padding:8px 11px;font-size:13px;background:var(--paper);color:var(--ink);cursor:pointer}
+#sel .x{background:#b3261e;color:#fff}#sel .ok{background:var(--accent);color:#fff}
+nav{display:flex;gap:6px;padding:10px 8px 14px;background:var(--bar);justify-content:center}
+nav button{flex:1;max-width:80px;border:0;border-radius:12px;padding:9px 2px;font-size:11px;background:var(--paper);color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+nav button b{font-size:19px;font-weight:400}
+nav button.main{background:var(--accent);color:#fff}
+nav button:disabled{opacity:.35}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}.ov.on{display:flex}
+.box{background:var(--paper);border-radius:14px;width:100%;max-width:520px;padding:14px;display:flex;flex-direction:column;gap:10px;max-height:80vh}
+.box h2{margin:0;font-size:16px}
+.box input,textarea{width:100%;border:1px solid var(--bar);border-radius:10px;padding:12px;font-size:16px;background:var(--bg);color:var(--ink)}
+textarea{height:38vh;resize:none;font-family:Georgia,serif;line-height:1.5}
+.row{display:flex;gap:8px;justify-content:flex-end}
+.row button{border:0;border-radius:10px;padding:10px 18px;font-size:15px;cursor:pointer;background:var(--bar);color:var(--ink)}.row .go{background:var(--accent);color:#fff}
+#tl{overflow:auto;display:flex;flex-direction:column;gap:6px}
+.toci{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:10px;padding:12px;background:var(--bg);color:var(--ink);font-size:15px;text-align:left;cursor:pointer}
+.toci.cur{outline:2px solid var(--accent)}
+.tn{min-width:26px;color:var(--accent);font-weight:700}.tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tt.none{color:var(--mute);font-style:italic}.tk{font-size:11px;color:var(--mute)}.tnone{color:var(--mute);padding:10px}
+</style>
+</head>
+<body>
+<header><h1>FlipNote</h1><div class="hb"><button id="toc">&#9776; Contents</button><button id="gal">&#128444; Gallery</button><button id="pdf">&#11015; PDF</button></div></header>
+<div id="tbar"><span id="ttl"></span><span id="count"></span></div>
+<div id="wrap"><div id="book"></div>
+  <div id="sel">
+    <button id="sm">&#8722; Smaller</button><button id="bg">+ Bigger</button>
+    <button id="lk" data-t="img"></button>
+    <button id="fm" data-t="text">Aa &#8722;</button><button id="fp" data-t="text">Aa +</button><button id="sed" data-t="text">Edit text</button>
+    <button id="sdl" class="x">Delete</button><button id="sok" class="ok">Done</button>
+  </div>
+</div>
+<nav>
+  <button id="prev"><b>&#9664;</b>Back</button>
+  <button id="np"><b>&#10133;</b>New page</button>
+  <button id="cam" class="main"><b>&#128247;</b>Photo</button>
+  <button id="txt" class="main"><b>&#9998;</b>Text</button>
+  <button id="del"><b>&#128465;</b>Del page</button>
+  <button id="next"><b>&#9654;</b>Next</button>
+</nav>
+<input type="file" id="file" accept="image/*" capture="environment" hidden>
+<input type="file" id="file2" accept="image/*" hidden>
+<div id="pm" class="ov"><div class="box"><h2>Allow camera access?</h2><div style="line-height:1.5;color:var(--mute)">FlipNote uses your camera to take photos for your notebook pages, and your photos to add pictures you already have.</div><div class="row"><button id="pno">Not now</button><button id="pyes" class="go">Allow</button></div></div></div>
+<div id="cm" class="ov"><div class="box"><video id="vid" autoplay playsinline muted style="width:100%;border-radius:10px;background:#000;max-height:60vh"></video><div class="row"><button id="ccancel">Cancel</button><button id="cflip">Switch camera</button><button id="cshot" class="go">&#128247; Capture</button></div></div></div>
+<div id="ed" class="ov"><div class="box"><h2 id="edt">New text</h2><textarea id="ta" placeholder="Type here..."></textarea><div class="row"><button id="cancel">Cancel</button><button id="save" class="go">Save</button></div></div></div>
+<div id="tm" class="ov"><div class="box"><h2>Page title</h2><input id="ti" maxlength="80" placeholder="Leave blank for No title"><div class="row"><button id="tcancel">Cancel</button><button id="tsave" class="go">Save title</button></div></div></div>
+<div id="tc" class="ov"><div class="box"><h2>Table of contents</h2><div id="tl"></div><div class="row"><button id="tclose">Close</button></div></div></div>
+<script>
+const $=s=>document.querySelector(s),book=$('#book');
+const PW=1240,PH=1754,AW=1060,AH=1444;
+let pages=[],idx=0,busy=false,sel=null,editing=null,delArm=null;
+const uid=()=>Math.random().toString(36).slice(2,9);
+const titleOf=p=>(p&&p.title||'').trim();
+const cur=()=>{const p=pages[idx];return p&&sel?p.items.find(i=>i.id===sel):null};
+const U=()=>book.clientWidth/PW;
+const probe=document.createElement('canvas').getContext('2d');
+
+function openDB(){return new Promise((res,rej)=>{try{const r=indexedDB.open('flipnote',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})}
+async function save(){try{const db=await openDB();db.transaction('kv','readwrite').objectStore('kv').put({pages,idx},'nb')}catch(e){}}
+async function load(){try{const db=await openDB();return await new Promise(res=>{const q=db.transaction('kv').objectStore('kv').get('nb');q.onsuccess=()=>res(q.result);q.onerror=()=>res(null)})}catch(e){return null}}
+
+function wrapLines(ctx,text,maxW){
+  const out=[];
+  for(const para of text.split('\n')){
+    if(!para.trim()){out.push('');continue}
+    let line='';
+    for(const w of para.split(/\s+/)){
+      const t=line?line+' '+w:w;
+      if(ctx.measureText(t).width<=maxW){line=t;continue}
+      if(line)out.push(line);
+      line=w;
+      while(ctx.measureText(line).width>maxW){let k=line.length;while(k>1&&ctx.measureText(line.slice(0,k)).width>maxW)k--;out.push(line.slice(0,k));line=line.slice(k)}
+    }
+    out.push(line);
+  }
+  return out;
+}
+function textH(t,fs,w){probe.font=`${fs}px Georgia,serif`;return wrapLines(probe,t,w*AW).length*fs*1.5/AH}
+function mig(p){
+  if(p.items)return p;
+  const it={id:uid(),x:0,y:0,w:1,h:1,lock:true};
+  if(p.type==='photo'){it.type='img';it.data=p.data}
+  else{it.type='text';it.text=p.data;it.fs=36;it.h=Math.min(1,Math.max(.08,textH(p.data,36,1)))}
+  return {title:p.title||'',items:[it]};
+}
+
+function fit(){
+  const w=$('#wrap'),aw=w.clientWidth-36,ah=w.clientHeight-20,k=PW/PH;
+  const bw=Math.max(100,Math.min(aw,ah*k,560));
+  book.style.width=bw+'px';book.style.height=bw/k+'px';book.style.setProperty('--u',bw/PW+'px');
+}
+const place=(e,it)=>{e.style.left=it.x*100+'%';e.style.top=it.y*100+'%';e.style.width=it.w*100+'%';e.style.height=it.h*100+'%'};
+function itemEl(it,live){
+  const e=document.createElement('div');e.className='it'+(live&&it.id===sel?' sel':'');e.dataset.id=it.id;place(e,it);
+  if(it.type==='img'){const i=new Image();i.src=it.data;i.draggable=false;e.append(i)}
+  else{const t=document.createElement('div');t.className='tx';t.textContent=it.text;t.style.fontSize=`calc(var(--u)*${it.fs})`;e.append(t)}
+  if(live){const h=document.createElement('div');h.className='hd';e.append(h)}
+  return e;
+}
+function pageEl(p,n,live){
+  const d=document.createElement('div');d.className='page';
+  if(!p){d.innerHTML='<div class="empty">Your notebook is empty.<br>Tap New page, then add<br>photos and text to it.</div>';return d}
+  const h=document.createElement('div'),t=titleOf(p);h.className='hdr';h.textContent=t||'No title';if(!t)h.style.opacity='.45';
+  const a=document.createElement('div');a.className='area';p.items.forEach(it=>a.append(itemEl(it,live)));
+  const num=document.createElement('div');num.className='num';num.textContent='Page '+(n+1);
+  d.append(h,a,num);return d;
+}
+function ui(){
+  $('#count').textContent=pages.length?`Page ${idx+1} of ${pages.length}`:'No pages yet';
+  const tt=titleOf(pages[idx]);$('#ttl').style.display=pages.length?'':'none';$('#ttl').textContent=tt||'No title';$('#ttl').classList.toggle('none',!tt);
+  $('#prev').disabled=idx<=0;$('#next').disabled=idx>=pages.length-1;$('#del').disabled=!pages.length;
+  if(delArm===null)$('#del').innerHTML='<b>&#128465;</b>Del page';
+  const it=cur(),bar=$('#sel');bar.style.display=it?'flex':'none';
+  if(it){bar.querySelectorAll('[data-t]').forEach(b=>b.style.display=b.dataset.t===it.type?'':'none');$('#lk').textContent=it.lock!==false?'\u{1F512} Ratio locked':'\u{1F513} Free resize'}
+}
+function render(){if(sel&&!cur())sel=null;book.replaceChildren(pageEl(pages[idx],idx,true));ui()}
+function flip(to){
+  if(busy||to<0||to>=pages.length||to===idx)return;
+  busy=true;sel=null;const fwd=to>idx,old=pageEl(pages[idx],idx),nw=pageEl(pages[to],to);
+  book.replaceChildren();let top;
+  if(fwd){book.append(nw,old);old.classList.add('flip-out');top=old}else{book.append(old,nw);nw.classList.add('flip-in');top=nw}
+  top.addEventListener('animationend',()=>{idx=to;busy=false;render();save()},{once:true});
+}
+function ensurePage(){if(!pages.length){pages.push({title:'',items:[]});idx=0}return pages[idx]}
+function addItem(it){const p=ensurePage();p.items.push(it);sel=it.id;render();save()}
+const bottomOf=p=>Math.max(0,...p.items.map(i=>i.y+i.h));
+
+$('#prev').onclick=()=>flip(idx-1);
+$('#next').onclick=()=>flip(idx+1);
+$('#np').onclick=()=>{pages.push({title:'',items:[]});sel=null;if(pages.length===1){idx=0;render();save()}else{ui();flip(pages.length-1)}};
+async function nativePhoto(src){
+  const C=window.Capacitor,P=C&&C.Plugins&&C.Plugins.Camera;
+  if(!(C&&C.isNativePlatform&&C.isNativePlatform()&&P))return false;
+  try{
+    const r=await P.getPhoto({quality:85,resultType:'dataUrl',source:src,correctOrientation:true});
+    if(r&&r.dataUrl){const b=await (await fetch(r.dataUrl)).blob();$('#file').onchange({target:{files:[b],value:''}})}
+  }catch(e){}
+  return true;
+}
+let stream=null,facing='environment';
+function stopCam(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('#cm').classList.remove('on')}
+async function startCam(){
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1920},height:{ideal:1080}},audio:false});
+  const v=$('#vid');v.srcObject=stream;await v.play().catch(()=>{});$('#cm').classList.add('on');
+}
+$('#cam').onclick=async()=>{
+  if(await nativePhoto('CAMERA'))return;
+  if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){try{await startCam();return}catch(e){stopCam()}}
+  $('#file').click();
+};
+$('#cflip').onclick=async()=>{facing=facing==='environment'?'user':'environment';try{await startCam()}catch(e){}};
+$('#ccancel').onclick=stopCam;
+$('#cshot').onclick=()=>{
+  const v=$('#vid');if(!v.videoWidth)return;
+  const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);
+  c.toBlob(b=>{stopCam();if(b)$('#file').onchange({target:{files:[b],value:''}})},'image/jpeg',.9);
+};
+$('#gal').onclick=async()=>{if(!await nativePhoto('PHOTOS'))$('#file2').click()};
+$('#file').onchange=$('#file2').onchange=e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  const url=URL.createObjectURL(f),im=new Image();
+  im.onload=()=>{
+    const m=1600,s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');
+    c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);
+    const p=ensurePage(),ar=c.width/c.height;
+    let w=p.items.length?.6:1,h=w*AW/ar/AH;if(h>.9){h=.9;w=h*AH*ar/AW}
+    addItem({id:uid(),type:'img',data:c.toDataURL('image/jpeg',.85),x:(1-w)/2,y:Math.min(bottomOf(p),Math.max(0,1-h)),w,h,lock:true});
+  };
+  im.src=url;
+};
+function openEd(id){
+  editing=id;$('#edt').textContent=id?'Edit text':'New text';
+  const it=id&&pages[idx].items.find(i=>i.id===id);$('#ta').value=it?it.text:'';$('#ed').classList.add('on');$('#ta').focus();
+}
+$('#txt').onclick=()=>openEd(null);
+$('#cancel').onclick=()=>$('#ed').classList.remove('on');
+$('#save').onclick=()=>{
+  const v=$('#ta').value.trim();if(!v)return;$('#ed').classList.remove('on');
+  if(editing){const it=pages[idx].items.find(i=>i.id===editing);if(it){it.text=v;it.h=Math.min(1-it.y,Math.max(it.h,textH(v,it.fs,it.w)+.005));render();save()}}
+  else{const p=ensurePage(),h=Math.min(1,textH(v,36,1)+.005);addItem({id:uid(),type:'text',text:v,fs:36,x:0,y:Math.min(bottomOf(p),Math.max(0,1-h)),w:1,h})}
+};
+$('#del').onclick=()=>{
+  if(delArm===null){delArm=setTimeout(()=>{delArm=null;ui()},3000);$('#del').innerHTML='<b>?</b>Sure?';return}
+  clearTimeout(delArm);delArm=null;pages.splice(idx,1);idx=Math.max(0,Math.min(idx,pages.length-1));sel=null;render();save();
+};
+
+/* item select, move, resize */
+book.addEventListener('pointerdown',e=>{
+  if(busy)return;
+  const el=e.target.closest('.it');
+  if(!el){if(sel){sel=null;render()}return}
+  const p=pages[idx],it=p&&p.items.find(i=>i.id===el.dataset.id);if(!it)return;
+  e.preventDefault();
+  const wasSel=sel===it.id,isH=e.target.classList.contains('hd');
+  if(!wasSel){sel=it.id;p.items.push(p.items.splice(p.items.indexOf(it),1)[0]);book.querySelectorAll('.it').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');el.parentNode.appendChild(el);ui()}
+  const u=U(),sx=e.clientX,sy=e.clientY,o={x:it.x,y:it.y,w:it.w,h:it.h},im=el.querySelector('img'),ar=im&&im.naturalWidth?im.naturalWidth/im.naturalHeight:0;
+  let moved=false;
+  const mv=ev=>{
+    const dx=(ev.clientX-sx)/(AW*u),dy=(ev.clientY-sy)/(AH*u);
+    if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>6)moved=true;
+    if(isH){
+      let w=Math.max(.06,Math.min(1-o.x,o.w+dx)),h=Math.max(.03,Math.min(1-o.y,o.h+dy));
+      if(ar&&it.lock!==false){h=w*AW/ar/AH;if(o.y+h>1){h=1-o.y;w=h*AH*ar/AW}}
+      it.w=w;it.h=h;
+    }else{it.x=Math.max(0,Math.min(1-o.w,o.x+dx));it.y=Math.max(0,Math.min(1-o.h,o.y+dy))}
+    place(el,it);
+  };
+  const up=()=>{el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);if(!moved&&!isH&&wasSel&&it.type==='text')openEd(it.id);save()};
+  el.setPointerCapture(e.pointerId);el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
+});
+function scaleSel(f){const it=cur();if(!it)return;let w=it.w*f,h=it.h*f;const k=Math.min(1,(1-it.x)/w,(1-it.y)/h);it.w=Math.max(.05,w*k);it.h=Math.max(.03,h*k);render();save()}
+$('#sm').onclick=()=>scaleSel(.9);$('#bg').onclick=()=>scaleSel(1.1);
+$('#lk').onclick=()=>{const it=cur();if(it){it.lock=it.lock===false;render();save()}};
+const font=d=>{const it=cur();if(it){it.fs=Math.max(12,Math.min(120,it.fs+d));render();save()}};
+$('#fm').onclick=()=>font(-4);$('#fp').onclick=()=>font(4);
+$('#sed').onclick=()=>{const it=cur();if(it)openEd(it.id)};
+$('#sdl').onclick=()=>{const it=cur();if(!it)return;pages[idx].items=pages[idx].items.filter(i=>i!==it);sel=null;render();save()};
+$('#sok').onclick=()=>{sel=null;render()};
+
+/* swipe to flip (not when touching an item) */
+let sx0=null;
+book.addEventListener('touchstart',e=>{sx0=e.target.closest('.it')?null:e.touches[0].clientX},{passive:true});
+book.addEventListener('touchend',e=>{if(sx0===null)return;const dx=e.changedTouches[0].clientX-sx0;sx0=null;if(dx<-50)flip(idx+1);else if(dx>50)flip(idx-1)});
+
+/* titles + contents */
+function openTitle(){if(!pages.length)return;$('#ti').value=titleOf(pages[idx]);$('#tm').classList.add('on');$('#ti').focus()}
+$('#tbar').onclick=openTitle;
+$('#tcancel').onclick=()=>$('#tm').classList.remove('on');
+function saveTitle(){pages[idx].title=$('#ti').value.trim();$('#tm').classList.remove('on');render();save()}
+$('#tsave').onclick=saveTitle;
+$('#ti').addEventListener('keydown',e=>{if(e.key==='Enter')saveTitle()});
+$('#toc').onclick=()=>{
+  const l=$('#tl');l.replaceChildren();
+  if(!pages.length){const e=document.createElement('div');e.className='tnone';e.textContent='No pages yet.';l.append(e)}
+  pages.forEach((p,i)=>{
+    const b=document.createElement('button');b.className='toci'+(i===idx?' cur':'');
+    const n=document.createElement('span');n.className='tn';n.textContent=i+1;
+    const ti=titleOf(p),t=document.createElement('span');t.className='tt'+(ti?'':' none');t.textContent=ti||'No title';
+    const k=document.createElement('span');k.className='tk';k.textContent=p.items.length+(p.items.length===1?' item':' items');
+    b.append(n,t,k);b.onclick=()=>{$('#tc').classList.remove('on');flip(i)};l.append(b);
+  });
+  $('#tc').classList.add('on');
+};
+$('#tclose').onclick=()=>$('#tc').classList.remove('on');
+
+/* PDF export (A4, one sheet per page, built on-device) */
+const loadImg=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src});
+async function sheetFor(p,n){
+  const c=document.createElement('canvas');c.width=PW;c.height=PH;const x=c.getContext('2d'),title=titleOf(p);
+  x.fillStyle='#fff';x.fillRect(0,0,PW,PH);
+  x.font='bold 46px Helvetica,Arial,sans-serif';x.fillStyle=title?'#222':'#999';
+  let t=title||'No title',cut=false;while(x.measureText(t).width>PW-180&&t.length>4){t=t.slice(0,-2);cut=true}
+  x.fillText(cut?t+'\u2026':t,90,120);x.fillStyle='#ccc';x.fillRect(90,148,PW-180,3);
+  x.fillStyle='#888';x.font='28px Helvetica,Arial,sans-serif';x.textAlign='center';x.fillText('Page '+n,PW/2,PH-60);x.textAlign='left';
+  for(const it of p.items){
+    const X=90+it.x*AW,Y=180+it.y*AH,W=it.w*AW,H=it.h*AH;
+    if(it.type==='img'){const im=await loadImg(it.data),s=Math.min(W/im.width,H/im.height),w=im.width*s,h=im.height*s;x.drawImage(im,X+(W-w)/2,Y+(H-h)/2,w,h)}
+    else{x.save();x.beginPath();x.rect(X,Y,W,H);x.clip();x.fillStyle='#222';x.font=`${it.fs}px Georgia,serif`;
+      wrapLines(x,it.text,W).forEach((l,j)=>x.fillText(l,X,Y+it.fs*1.15+j*it.fs*1.5));x.restore()}
+  }
+  return c;
+}
+async function buildPDF(){
+  const enc=new TextEncoder(),parts=[],offs=[],jpgs=[];let len=0;
+  const push=d=>{const b=typeof d==='string'?enc.encode(d):d;parts.push(b);len+=b.length};
+  for(let i=0;i<pages.length;i++){
+    const c=await sheetFor(pages[i],i+1),b=await new Promise(r=>c.toBlob(r,'image/jpeg',.85));
+    jpgs.push(new Uint8Array(await b.arrayBuffer()));c.width=c.height=0;
+  }
+  const N=jpgs.length,total=2+3*N;
+  push('%PDF-1.4\n');
+  offs[1]=len;push('1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n');
+  offs[2]=len;push('2 0 obj\n<</Type/Pages/Count '+N+'/Kids['+jpgs.map((_,i)=>(3+3*i)+' 0 R').join(' ')+']>>\nendobj\n');
+  for(let i=0;i<N;i++){
+    const pg=3+3*i,im=pg+1,ct=pg+2,jpg=jpgs[i],cs='q 595 0 0 842 0 0 cm /Im0 Do Q';
+    offs[pg]=len;push(`${pg} 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Resources<</XObject<</Im0 ${im} 0 R>>>>/Contents ${ct} 0 R>>\nendobj\n`);
+    offs[im]=len;push(`${im} 0 obj\n<</Type/XObject/Subtype/Image/Width ${PW}/Height ${PH}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${jpg.length}>>\nstream\n`);push(jpg);push('\nendstream\nendobj\n');
+    offs[ct]=len;push(`${ct} 0 obj\n<</Length ${cs.length}>>\nstream\n${cs}\nendstream\nendobj\n`);
+  }
+  const xr=len;let xt='xref\n0 '+(total+1)+'\n0000000000 65535 f \n';
+  for(let k=1;k<=total;k++)xt+=String(offs[k]).padStart(10,'0')+' 00000 n \n';
+  push(xt+`trailer\n<</Size ${total+1}/Root 1 0 R>>\nstartxref\n${xr}\n%%EOF`);
+  return new Blob(parts,{type:'application/pdf'});
+}
+async function savePDF(blob){
+  try{if(window.claude&&claude.use){const d=await claude.use('downloads');if(d){await d.save({filename:'FlipNote.pdf',data:blob});return}}}catch(e){if(e&&e.code==='declined')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='FlipNote.pdf';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+$('#pdf').onclick=async()=>{
+  if(!pages.length||busy)return;const b=$('#pdf');b.disabled=true;b.textContent='Making PDF\u2026';
+  try{await savePDF(await buildPDF())}catch(e){}
+  b.disabled=false;b.innerHTML='&#11015; PDF';
+};
+
+async function askPerms(){
+  const C=window.Capacitor,P=C&&C.Plugins&&C.Plugins.Camera;
+  try{
+    if(C&&C.isNativePlatform&&C.isNativePlatform()&&P&&P.requestPermissions){await P.requestPermissions({permissions:['camera','photos']})}
+    else if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){const s=await navigator.mediaDevices.getUserMedia({video:true});s.getTracks().forEach(t=>t.stop())}
+  }catch(e){}
+}
+const seen=()=>{try{return localStorage.getItem('fn_perm')}catch(e){return null}};
+const mark=()=>{try{localStorage.setItem('fn_perm','1')}catch(e){}};
+$('#pyes').onclick=async()=>{$('#pm').classList.remove('on');mark();await askPerms()};
+$('#pno').onclick=()=>{$('#pm').classList.remove('on');mark()};
+if(!seen())$('#pm').classList.add('on');
+addEventListener('resize',fit);
+fit();
+load().then(d=>{if(d&&d.pages){pages=d.pages.map(mig);idx=Math.min(d.idx||0,Math.max(0,pages.length-1))}render()});
+</script>
+</body>
+</html>
